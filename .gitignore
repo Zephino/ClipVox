@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+output/
+*.wav
+*.mp3
+*.m4a
+*.webm
+.DS_Store
+Thumbs.db

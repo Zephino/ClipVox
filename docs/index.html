@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipVox — voice clips for TikTrigz</title>
+<meta name="description" content="Turn YouTube videos or audio files into clean voice clips: WAV, 16-bit PCM, mono, 22,050 Hz.">
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel2: #1e222b; --line: #2a2f3a;
+    --text: #e9ecf2; --muted: #9aa3b2; --accent: #ffcc33; --accent2: #ff5d8f;
+    --ok: #4ade80; --bad: #f87171;
+    --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  a { color: var(--accent); }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 20px; }
+  header { padding: 56px 0 36px; border-bottom: 1px solid var(--line);
+           background: radial-gradient(1200px 300px at 20% -10%, #ffcc3322, transparent),
+                       radial-gradient(800px 260px at 90% 0%, #ff5d8f1f, transparent); }
+  .logo { font-weight: 800; letter-spacing: -0.02em; font-size: 44px; margin: 0; }
+  .logo span { color: var(--accent); }
+  .tag { color: var(--muted); font-size: 19px; margin: 8px 0 22px; max-width: 620px; }
+  .spec { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .chip { font: 13px var(--mono); background: var(--panel2); border: 1px solid var(--line);
+          padding: 4px 10px; border-radius: 999px; color: var(--text); }
+  .btn { display: inline-block; background: var(--accent); color: #111; font-weight: 700;
+         padding: 11px 18px; border-radius: 10px; text-decoration: none; border: 0;
+         cursor: pointer; font-size: 15px; }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  section { padding: 40px 0; border-bottom: 1px solid var(--line); }
+  h2 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .drop { border: 2px dashed var(--line); border-radius: 12px; padding: 34px 16px; text-align: center;
+          cursor: pointer; transition: border-color .15s, background .15s; }
+  .drop.over, .drop:hover { border-color: var(--accent); background: #ffcc330a; }
+  .drop strong { display: block; font-size: 18px; }
+  .drop small { color: var(--muted); }
+  .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 20px; margin: 18px 0; }
+  .opts label { display: flex; gap: 8px; align-items: center; color: var(--text); white-space: nowrap; }
+  .opts input[type=text] { background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+                           border-radius: 8px; padding: 7px 10px; width: 100%; font: inherit; }
+  .status { font: 13px var(--mono); color: var(--muted); min-height: 20px; margin: 12px 0 0; white-space: pre-wrap; }
+  .clips { margin-top: 16px; display: grid; gap: 8px; }
+  .clip { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;
+          background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .clip .n { font: 14px var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .clip .m { color: var(--muted); font: 12px var(--mono); }
+  .clip audio { height: 32px; max-width: 220px; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); }
+  .note { background: #ffcc3312; border: 1px solid #ffcc3340; border-radius: 10px; padding: 12px 14px;
+          color: var(--text); font-size: 14px; margin-top: 16px; }
+  ol.steps { padding-left: 0; list-style: none; counter-reset: s; margin: 0; display: grid; gap: 14px; }
+  ol.steps li { counter-increment: s; position: relative; padding-left: 46px; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 32px; height: 32px;
+                        border-radius: 50%; background: var(--panel2); border: 1px solid var(--line);
+                        display: grid; place-items: center; font-weight: 700; color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: 13.5px; }
+  pre { background: #0b0d11; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+        overflow-x: auto; margin: 8px 0 0; }
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .card h3 { margin: 0 0 6px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  footer { padding: 30px 0 50px; color: var(--muted); font-size: 14px; }
+  .btn { min-height: 44px; }
+  input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); }
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .wrap { padding: 0 16px; }
+    header { padding: 40px 0 28px; }
+    .logo { font-size: 38px; }
+    .tag { font-size: 17px; }
+    section { padding: 32px 0; }
+    .panel { padding: 16px; }
+    .drop { padding: 28px 12px; }
+    .btns .btn { flex: 1 1 100%; text-align: center; }
+    .opts label { white-space: normal; flex-wrap: wrap; }
+    .opts label input[type=text] { flex: 1 1 100%; }
+    .clip { grid-template-columns: 1fr; gap: 8px; }
+    .clip audio { max-width: 100%; width: 100%; height: 40px; }
+    .clip .btn { text-align: center; }
+    .clip .m { white-space: normal; }
+    pre { font-size: 12.5px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1 class="logo">Clip<span>Vox</span></h1>
+    <p class="tag">Turn a YouTube video or an audio file into clean voice clips you can train an AI voice on, in the exact format TikTrigz uses.</p>
+    <div class="spec">
+      <span class="chip">WAV</span><span class="chip">16-bit PCM</span><span class="chip">mono</span>
+      <span class="chip">22,050 Hz</span><span class="chip">≤ 20 clips</span><span class="chip">≤ 12 MB / clip</span>
+      <span class="chip">&lt; 5 min / clip</span>
+    </div>
+    <div class="btns">
+      <a class="btn" id="dl" href="#setup">Download the PC tool</a>
+      <a class="btn ghost" href="#convert">Convert files in your browser</a>
+    </div>
+  </div>
+</header>
+
+<section id="convert">
+  <div class="wrap">
+    <h2>Convert in your browser</h2>
+    <p class="sub">Drop in audio you've already cleaned up. Everything runs on your own device and nothing is uploaded.</p>
+    <div class="panel">
+      <input type="file" id="file" accept="audio/*,video/*" multiple hidden>
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose audio files">
+        <strong id="dropTitle">Drop audio files here</strong>
+        <small id="dropHint">or click to choose: WAV, MP3, M4A, OGG, FLAC, or MP4 video</small>
+      </div>
+      <div class="opts">
+        <label><input type="checkbox" id="optTrim" checked> Shorten long pauses</label>
+        <label><input type="checkbox" id="optNorm" checked> Even out the volume</label>
+        <label style="grid-column: 1 / -1">Voice name&nbsp;<input type="text" id="optName" placeholder="e.g. macho_man (optional)" maxlength="40"></label>
+      </div>
+      <div class="btns">
+        <button class="btn" id="go" disabled>Make clips</button>
+        <button class="btn ghost" id="zip" disabled>Download all (.zip)</button>
+        <button class="btn ghost" id="clear" disabled>Clear</button>
+      </div>
+      <p class="status" id="status"></p>
+      <div class="clips" id="clips"></div>
+      <div class="note">The browser converter <b>can't remove music or crowd noise</b>. For YouTube links and noisy audio, use the PC tool. It downloads the video and strips out everything except the voice.</div>
+    </div>
+  </div>
+</section>
+
+<section id="setup">
+  <div class="wrap">
+    <h2>PC tool (Windows)</h2>
+    <p class="sub">Paste YouTube links, and ClipVox downloads them, removes the music and background noise, and saves TikTrigz-ready clips.</p>
+    <ol class="steps">
+      <li><b>Install Python 3.12</b> from <a href="https://www.python.org/downloads/" rel="noopener">python.org</a>. On the first install screen, tick <b>“Add python.exe to PATH”</b>.</li>
+      <li><b>Download ClipVox</b> with the button at the top of this page, then right-click the zip and choose <b>Extract All…</b></li>
+      <li><b>Double-click <code>install.bat</code></b> in the extracted folder. The first install downloads about 1 GB and takes a few minutes.</li>
+      <li><b>Double-click <code>run.bat</code></b>, paste YouTube links (one per line), give the voice a name, and click <b>Make clips</b>. Your clips will be in the <code>output</code> folder.</li>
+    </ol>
+    <p class="sub" style="margin-top:22px">If YouTube downloads stop working, double-click <code>update.bat</code>. You can also run the tool from Command Prompt:</p>
+<pre>cd %USERPROFILE%\Downloads\ClipVox-main
+.venv\Scripts\python.exe clipvox.py --cli "https://www.youtube.com/watch?v=VIDEO_ID" -n macho_man</pre>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Tips for a good voice</h2>
+    <p class="sub">Clear, consistent audio matters more than the amount.</p>
+    <div class="grid3">
+      <div class="card panel"><h3>Pick talking, not hype</h3><p>Interviews and sit-down promos work best. Avoid clips with entrance music, crowd noise, or other people talking.</p></div>
+      <div class="card panel"><h3>A few minutes is plenty</h3><p>5 to 15 minutes of clean speech beats an hour of noisy audio. Listen to your clips and delete any bad ones.</p></div>
+      <div class="card panel"><h3>Keep it in fun</h3><p>Use voices for jokes and obvious parody. Label AI voices as AI on TikTok, and don't use them to fool people or make money.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">ClipVox <span id="ver">v1.0.0</span> · MIT License · Made by <a href="https://github.com/Zephino">Zephino</a></div>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+  const RATE = 22050, CLIP_SEC = 240, MAX_CLIPS = 20, MAX_BYTES = 12 * 1024 * 1024, MIN_SEC = 2;
+  const $ = (id) => document.getElementById(id);
+  const fileIn = $("file"), drop = $("drop"), go = $("go"), zipBtn = $("zip"), clearBtn = $("clear");
+  const statusEl = $("status"), clipsEl = $("clips");
+  let files = [], clips = [];
+
+  // Point the download button at this repo's zip when hosted on GitHub Pages.
+  (function setDownload() {
+    const host = location.hostname.match(/^([a-z0-9-]+)\.github\.io$/i);
+    const repo = location.pathname.split("/").filter(Boolean)[0];
+    if (host && repo) {
+      $("dl").href = `https://github.com/${host[1]}/${repo}/archive/refs/heads/main.zip`;
+      $("dl").insertAdjacentHTML("afterend",
+        `<a class="btn ghost" href="https://github.com/${host[1]}/${repo}">View on GitHub</a>`);
+    }
+  })();
+
+  if (window.matchMedia && matchMedia("(pointer: coarse)").matches) {
+    $("dropTitle").textContent = "Tap to pick audio files";
+    $("dropHint").textContent = "From Files, Voice Memos, or Downloads: WAV, MP3, M4A, or MP4 video";
+  }
+  const say = (t) => { statusEl.textContent = t; };
+  const fmtMB = (b) => (b / 1048576).toFixed(1) + " MB";
+  const fmtT = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+  const safe = (s) => (s.replace(/\.[^.]+$/, "").replace(/[^A-Za-z0-9 _-]+/g, "").trim()
+                        .replace(/\s+/g, "_").slice(0, 48)) || "voice";
+
+  function pick(list) {
+    files = [...list].filter((f) => /^(audio|video)\//.test(f.type) || /\.(wav|mp3|m4a|aac|flac|ogg|opus|webm|mp4)$/i.test(f.name));
+    go.disabled = !files.length;
+    say(files.length ? `${files.length} file(s) ready: ${files.map((f) => f.name).join(", ")}` : "No audio files found in what you picked.");
+  }
+  drop.addEventListener("click", () => fileIn.click());
+  drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileIn.click(); } });
+  fileIn.addEventListener("change", () => pick(fileIn.files));
+  ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", (e) => pick(e.dataTransfer.files));
+
+  // ---- audio processing ----
+  async function toMono22k(file) {
+    const bytes = await file.arrayBuffer();
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new Ctx();
+    let buf;
+    try { buf = await ctx.decodeAudioData(bytes); }
+    finally { ctx.close && ctx.close(); }
+    const len = Math.max(1, Math.ceil(buf.duration * RATE));
+    const off = new OfflineAudioContext(1, len, RATE); // 1 channel => browser mixes stereo down to mono
+    const src = off.createBufferSource();
+    src.buffer = buf;
+    // High-pass at 70 Hz to cut rumble, same as the PC tool.
+    const hp = off.createBiquadFilter();
+    hp.type = "highpass"; hp.frequency.value = 70;
+    src.connect(hp); hp.connect(off.destination);
+    src.start();
+    const out = await off.startRendering();
+    return out.getChannelData(0).slice();
+  }
+
+  function normalize(x) {
+    // Bring the loud parts of speech to a steady level, without clipping.
+    let peak = 0, sum = 0, n = 0;
+    const win = Math.floor(RATE * 0.05), levels = [];
+    for (let i = 0; i < x.length; i += win) {
+      let s = 0; const end = Math.min(x.length, i + win);
+      for (let j = i; j < end; j++) { s += x[j] * x[j]; const a = Math.abs(x[j]); if (a > peak) peak = a; }
+      levels.push(Math.sqrt(s / Math.max(1, end - i)));
+    }
+    if (!peak) return x;
+    const loud = levels.filter((l) => l > 0.01).sort((a, b) => a - b);
+    const ref = loud.length ? loud[Math.floor(loud.length * 0.9)] : peak;
+    let g = 0.18 / ref;                   // aim speech level around -15 dBFS
+    g = Math.min(g, 0.89 / peak, 20);     // never clip, never boost more than 26 dB
+    for (let i = 0; i < x.length; i++) x[i] *= g;
+    return x;
+  }
+
+  function trimPauses(x) {
+    // Shorten any pause longer than 0.7 s down to 0.3 s.
+    const frame = Math.floor(RATE * 0.02), thr = Math.pow(10, -45 / 20);
+    const maxSil = Math.floor(0.7 / 0.02), keep = Math.floor(0.15 / 0.02);
+    const frames = Math.ceil(x.length / frame), quiet = new Uint8Array(frames);
+    for (let f = 0; f < frames; f++) {
+      let s = 0; const a = f * frame, b = Math.min(x.length, a + frame);
+      for (let i = a; i < b; i++) s += x[i] * x[i];
+      quiet[f] = Math.sqrt(s / Math.max(1, b - a)) < thr ? 1 : 0;
+    }
+    const parts = []; let f = 0, total = 0;
+    while (f < frames) {
+      let g = f; while (g < frames && quiet[g] === quiet[f]) g++;
+      const run = g - f;
+      if (quiet[f] && run > maxSil) {
+        parts.push([f * frame, (f + keep) * frame]);
+        parts.push([(g - keep) * frame, Math.min(x.length, g * frame)]);
+      } else parts.push([f * frame, Math.min(x.length, g * frame)]);
+      f = g;
+    }
+    for (const [a, b] of parts) total += b - a;
+    const out = new Float32Array(total); let o = 0;
+    for (const [a, b] of parts) { out.set(x.subarray(a, b), o); o += b - a; }
+    return out;
+  }
+
+  function wav16(samples) {
+    const n = samples.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVE");
+    w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, RATE, true); v.setUint32(28, RATE * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    w(36, "data"); v.setUint32(40, n * 2, true);
+    for (let i = 0, o = 44; i < n; i++, o += 2) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      v.setInt16(o, s < 0 ? Math.round(s * 32768) : Math.round(s * 32767), true);
+    }
+    return new Uint8Array(buf);
+  }
+
+  function addClip(name, bytes, seconds) {
+    const blob = new Blob([bytes], { type: "audio/wav" }), url = URL.createObjectURL(blob);
+    const ok = bytes.length <= MAX_BYTES && seconds < 300;
+    clips.push({ name, bytes, url });
+    const row = document.createElement("div");
+    row.className = "clip";
+    row.innerHTML = `<div><div class="n"></div><div class="m">${fmtT(seconds)} · ${fmtMB(bytes.length)} · 16-bit mono 22.05 kHz · <span class="${ok ? "ok" : "bad"}">${ok ? "OK" : "too big"}</span></div></div>
+      <audio controls preload="none"></audio><a class="btn ghost" download>Save</a>`;
+    row.querySelector(".n").textContent = name;
+    row.querySelector("audio").src = url;
+    const a = row.querySelector("a"); a.href = url; a.download = name;
+    clipsEl.appendChild(row);
+  }
+
+  go.addEventListener("click", async () => {
+    go.disabled = true; clearBtn.disabled = true;
+    const trim = $("optTrim").checked, norm = $("optNorm").checked;
+    const custom = $("optName").value.trim();
+    let made = clips.length, skipped = 0;
+    const used = new Set(clips.map((c) => c.name));
+    for (let fi = 0; fi < files.length; fi++) {
+      const file = files[fi];
+      if (made >= MAX_CLIPS) { skipped++; continue; }
+      try {
+        say(`Decoding ${file.name}…`);
+        let x = await toMono22k(file);
+        if (norm) { say(`Evening out volume: ${file.name}…`); x = normalize(x); }
+        if (trim) { say(`Shortening pauses: ${file.name}…`); x = trimPauses(x); }
+        const base = custom ? `${safe(custom)}${files.length > 1 ? "_" + (fi + 1) : ""}` : safe(file.name);
+        const per = CLIP_SEC * RATE;
+        for (let i = 0, k = 1; i < x.length && made < MAX_CLIPS; i += per) {
+          const part = x.subarray(i, Math.min(x.length, i + per));
+          if (part.length < MIN_SEC * RATE) continue;
+          let name; do { name = `${base}_${String(k++).padStart(2, "0")}.wav`; } while (used.has(name));
+          used.add(name);
+          addClip(name, wav16(part), part.length / RATE);
+          made++;
+          await new Promise((r) => setTimeout(r));
+        }
+      } catch (err) {
+        say(`Couldn't read ${file.name}. Try converting it to MP3 or WAV first. (${err.message || err})`);
+        await new Promise((r) => setTimeout(r, 1800));
+      }
+    }
+    say(`${clips.length} clip(s) ready.${made >= MAX_CLIPS ? ` Stopped at the ${MAX_CLIPS}-clip limit.` : ""}${skipped ? ` ${skipped} file(s) skipped.` : ""}`);
+    go.disabled = !files.length; zipBtn.disabled = !clips.length; clearBtn.disabled = !clips.length;
+  });
+
+  clearBtn.addEventListener("click", () => {
+    clips.forEach((c) => URL.revokeObjectURL(c.url));
+    clips = []; clipsEl.innerHTML = ""; zipBtn.disabled = true; clearBtn.disabled = true; say("");
+  });
+
+  // ---- minimal ZIP writer (no compression) ----
+  const CRC = (() => { const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+    return t; })();
+  const crc32 = (d) => { let c = 0xFFFFFFFF; for (let i = 0; i < d.length; i++) c = CRC[(c ^ d[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+
+  function makeZip(items) {
+    const enc = new TextEncoder(), parts = [], central = [];
+    let offset = 0;
+    for (const it of items) {
+      const name = enc.encode(it.name), crc = crc32(it.bytes), size = it.bytes.length;
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true);
+      h.setUint16(8, 0, true); h.setUint16(10, 0, true); h.setUint16(12, 0x21, true);
+      h.setUint32(14, crc, true); h.setUint32(18, size, true); h.setUint32(22, size, true);
+      h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+      parts.push(new Uint8Array(h.buffer), name, it.bytes);
+      const c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true);
+      c.setUint16(10, 0, true); c.setUint16(12, 0, true); c.setUint16(14, 0x21, true);
+      c.setUint32(16, crc, true); c.setUint32(20, size, true); c.setUint32(24, size, true);
+      c.setUint16(28, name.length, true); c.setUint32(42, offset, true);
+      central.push(new Uint8Array(c.buffer), name);
+      offset += 30 + name.length + size;
+    }
+    const cdSize = central.reduce((s, p) => s + p.length, 0);
+    const e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, items.length, true); e.setUint16(10, items.length, true);
+    e.setUint32(12, cdSize, true); e.setUint32(16, offset, true);
+    return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: "application/zip" });
+  }
+
+  zipBtn.addEventListener("click", () => {
+    const url = URL.createObjectURL(makeZip(clips));
+    const a = document.createElement("a");
+    a.href = url; a.download = `${safe($("optName").value || "voice")}_clips.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  });
+})();
+</script>
+</body>
+</html>
