@@ -3,6 +3,11 @@
 All notable changes to ClipVox are listed here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: [SemVer](https://semver.org/).
 
+## [1.1.2] - 2026-11-24
+### Fixed
+- Videos whose title has an emoji (for example a heart) failed with "'charmap' codec can't
+  encode character" on Windows. Output now uses UTF-8 and replaces anything it cannot show.
+
 ## [1.1.1] - 2026-11-23
 ### Fixed
 - Crash ("max() iterable argument is empty") on videos with many voices where no single voice

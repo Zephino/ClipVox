@@ -16,6 +16,13 @@ from pathlib import Path
 
 import clipvox_core as core
 
+# Windows consoles use a legacy code page; video titles with emoji would crash print().
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 APP_DIR = Path(__file__).resolve().parent
 VERSION = (APP_DIR / "VERSION").read_text().strip() if (APP_DIR / "VERSION").exists() else "dev"
 
