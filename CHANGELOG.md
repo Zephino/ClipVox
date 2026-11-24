@@ -3,6 +3,15 @@
 All notable changes to ClipVox are listed here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: [SemVer](https://semver.org/).
 
+## [1.1.1] - 2026-11-23
+### Fixed
+- Crash ("max() iterable argument is empty") on videos with many voices where no single voice
+  passed the minimum share.
+
+### Changed
+- Voice grouping is looser (`GROUP_THRESHOLD` 0.55 to 0.75). Short 1.5-second slices of one
+  person are often 0.6 to 0.9 apart, so 0.55 split one person into hundreds of voices.
+
 ## [1.1.0] - 2026-11-23
 ### Added
 - Speaker finder (`clipvox_speaker.py`): works out when the wanted person is talking.

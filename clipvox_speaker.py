@@ -36,7 +36,7 @@ MIN_REGION = 0.4       # ignore speech blips shorter than this
 MIN_SEG = 1.0          # drop final ranges shorter than this
 JOIN_GAP = 0.6         # join ranges separated by less than this
 PAD = 0.1              # small cushion around each range
-GROUP_THRESHOLD = 0.55 # how different two voices must be to split (cosine distance)
+GROUP_THRESHOLD = 0.75 # how different two voices must be to split (cosine distance)
 SAMPLE_MATCH = 0.45    # how close a group must be to the sample (cosine similarity)
 MIN_GROUP_SHARE = 0.03 # groups with less than 3% of the talking are treated as noise
 DEFAULT_MAX_MINUTES = 20
@@ -229,6 +229,8 @@ def analyse(audio, log: Log, ref=None, threshold: float = GROUP_THRESHOLD) -> Re
         talk[lab] = talk.get(lab, 0.0) + (b - a)
     heard = sum(talk.values()) or 1.0
     real = {k: v for k, v in talk.items() if v / heard >= MIN_GROUP_SHARE}
+    if not real:  # many small voices and none big enough: keep them all
+        real = dict(talk)
     voices = len(real) or 1
 
     note = ""
