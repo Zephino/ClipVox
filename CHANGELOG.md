@@ -3,6 +3,24 @@
 All notable changes to ClipVox are listed here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: [SemVer](https://semver.org/).
 
+## [1.1.0] - 2026-11-23
+### Added
+- Speaker finder (`clipvox_speaker.py`): works out when the wanted person is talking.
+  Finds speech (Silero VAD), takes a voice fingerprint of each 1.5-second slice
+  (SpeechBrain ECAPA), groups slices by voice, and picks the voice that talks the most,
+  or the one that matches a voice sample if you give one.
+- **Find timestamps (sheet CSV)** button and `--timestamps` command: reads the CSV from the
+  sheet's Needs Trimming page and writes `output/timestamps.csv` with time ranges, how much
+  wanted speech was found, how many voices, confidence and a jump-to link. Saves after every
+  video, skips search links, and picks up where it left off (failed videos are retried).
+- Voice samples: put a short clip in the `samples` folder named like `Peter_Griffin.wav`
+  or `Family_Guy_Peter_Griffin.wav` and it is used for that row automatically.
+- **Keep only the wanted voice** option (and `--only-speaker` / `--sample`) when making clips:
+  cuts out interviewers and other voices before clean-up.
+
+### Changed
+- Install now also adds SpeechBrain, Silero VAD and scikit-learn (CPU only).
+
 ## [1.0.0] - 2026-11-23
 ### Added
 - PC tool (`clipvox.py`) with a window and a command-line mode.

@@ -24,6 +24,31 @@ Turn YouTube videos or audio files into clean voice clips for training an AI voi
 The first time you use music removal, ClipVox downloads the voice-separation model (~80 MB).
 It runs on the CPU and takes a few minutes for every 10 minutes of audio.
 
+### Find when the wanted person is talking
+
+Interviews have a host talking too, and cartoon compilations have other characters.
+ClipVox can find the wanted voice for you.
+
+**For a whole list (from the sheet):**
+
+1. On the sheet, open the **Needs Trimming** page and download it as a CSV.
+2. In ClipVox, click **Find timestamps (sheet CSV)...** and pick that file.
+3. It checks each video (the first 20 minutes) and writes `output\timestamps.csv`:
+   the time ranges where the wanted voice talks, how much was found, how sure it is,
+   and a link that jumps to the first good spot. Click **Stop** any time; running it
+   again picks up where it left off.
+
+It picks the voice that talks the most, which is the guest in an interview. When that's
+wrong (a compilation where someone else talks more), add a **voice sample**: a 5-30 second
+clip of just that voice, saved in the `samples` folder and named after the character, like
+`samples\Peter_Griffin.wav`. Rows marked confidence **low** are the ones to check by ear.
+
+**For clips you're making now:** tick **Keep only the wanted voice**, and optionally click
+**Voice sample...** to pick a clip of the right voice.
+
+The first run downloads two small models (about 85 MB). It runs on the CPU; expect a
+minute or two per 20 minutes of video.
+
 ### Command line
 
 Open **Command Prompt** in the ClipVox folder, then run:
@@ -40,6 +65,22 @@ Open **Command Prompt** in the ClipVox folder, then run:
 | `--keep-silence` | Don't shorten long pauses |
 | `--no-normalize` | Don't even out the volume |
 | `--clip-seconds N` | Clip length (default 240) |
+| `--only-speaker` | Keep only the wanted voice |
+| `--sample FILE` | Voice sample of the wanted person |
+
+Find timestamps for a sheet CSV:
+
+```
+.venv\Scripts\python.exe clipvox.py --timestamps "C:\Users\YOU\Downloads\Needs Trimming.csv"
+```
+
+| Option | What it does |
+|---|---|
+| `-o FILE` | Where to save (default `output\timestamps.csv`) |
+| `--samples FOLDER` | Folder of voice samples (default `samples`) |
+| `--max-minutes N` | Only check the first N minutes of each video (default 20, `0` = all) |
+| `--limit N` | Only do N videos (good for a test run) |
+| `--any-status` | Check every row with a video link, not just Needs trimming |
 
 ### If YouTube downloads stop working
 
