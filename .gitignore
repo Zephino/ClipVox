@@ -8,3 +8,5 @@ output/
 *.webm
 .DS_Store
 Thumbs.db
+models/
+samples/

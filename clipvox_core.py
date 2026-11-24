@@ -42,6 +42,9 @@ class Options:
     trim_silence: bool = True
     normalize: bool = True
     clip_seconds: int = CLIP_SECONDS
+    speaker_only: bool = False          # keep only the wanted voice
+    speaker_sample: str | None = None   # optional voice sample file
+    speaker_max_minutes: float | None = 30
 
 
 def ffmpeg_exe() -> str:
@@ -232,6 +235,21 @@ def process(sources: Iterable[str], out_dir: Path, opts: Options, log: Log,
                     base = f"{base}_{i + 1}"
                 work = tmp / f"src_{i}.wav"
                 to_stereo_44k(raw, work)
+                if opts.speaker_only:
+                    import clipvox_speaker as spk
+                    sample = Path(opts.speaker_sample) if opts.speaker_sample else None
+                    log("Finding when the wanted voice is talking...")
+                    res = spk.find_speaker(work, log, sample=sample,
+                                           max_minutes=opts.speaker_max_minutes)
+                    if not res.segments:
+                        raise RuntimeError("Could not find the wanted voice. "
+                                           + (res.note or ""))
+                    only = tmp / f"spk_{i}.wav"
+                    kept = spk.keep_segments(work, only, res.segments)
+                    log(f"  kept {kept / 60:.1f} min of the wanted voice "
+                        f"({res.voices} voice(s) heard, picked by {res.picked_by}, "
+                        f"confidence {res.confidence})")
+                    work = only
                 if opts.remove_music:
                     voc = tmp / f"voc_{i}.wav"
                     separate_vocals(work, voc, log)
